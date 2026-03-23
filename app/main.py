@@ -1,54 +1,14 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi import HTTPException
-from enum import Enum
-from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.database import Base, engine, get_db
+from app import models
+from app.models import Client, Room, Booking
+from app.schemas import ClientCreate, RoomCreate, BookingCreate
 
 app = FastAPI()
 
-class ClientCreate(BaseModel):
-    name: str
-
-class RoomCreate(BaseModel):
-    name: str
-
-
-class BookingStatus(str, Enum):
-    confirmed = "confirmed"
-    cancelled = "cancelled"
-    pending = "pending"
-
-class BookingCreate(BaseModel):
-    client_id: int
-    room_id: int
-    start_time: datetime
-    end_time: datetime
-    status: BookingStatus
-
-clients = [
-    {"id": 1,
-    "name": "Client A"},
-
-    {"id": 2, 
-    "name": "Client B"}
-]
-
-rooms = [
-        {"id": 1, 
-        "name": "Room A"},
-
-        {"id": 2,
-        "name": "Room B"}
-    ]
-
-bookings = [
-        {"id": 1, 
-        "client_id": 1, 
-        "room_id": 2,
-        "start_time": datetime(2026, 3, 21, 14, 0),
-        "end_time": datetime(2026, 3, 21, 16, 0),
-        "status": "confirmed"}
-    ]
+Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def root():
@@ -56,88 +16,67 @@ def root():
 
 #Clients
 @app.get("/clients")
-def get_clients():
-    return clients
+def get_clients(db: Session = Depends(get_db)):
+    return db.query(Client).all()
 
 @app.post("/clients")
-def create_client(client: ClientCreate):
-    new_client= {
-        "id": len(clients)+1,
-        "name": client.name
-    }
-    clients.append(new_client)
-    return {
-        "message": "Client created successfully",
-        "client": new_client
-    }
+def create_client(client: ClientCreate, db: Session = Depends(get_db)):
+    new_client= Client(name=client.name)
+    db.add(new_client)
+    db.commit()
+    db.refresh(new_client)
+    return new_client
 
 #Rooms
 @app.get("/rooms")
-def get_rooms():
-    return rooms
+def get_rooms(db: Session = Depends(get_db)):
+    return db.query(Room).all()
 
 @app.post("/rooms")
-def create_room(room: RoomCreate):
-    new_room= {
-        "id": len(rooms)+1,
-        "name": room.name
-    }
-    rooms.append(new_room)
-    return {
-        "message": "Room created successfully",
-        "room": new_room
-    }
+def create_room(room: RoomCreate, db: Session = Depends(get_db)):
+    new_room= Room(name=room.name)
+    db.add(new_room)
+    db.commit()
+    db.refresh(new_room)
+    return new_room
 
 #Bookings
 @app.get("/bookings")
-def get_bookings():
-    return bookings
+def get_bookings(db: Session = Depends(get_db)):
+    return db.query(Booking).all()
 
 @app.post("/bookings")
-def create_booking(booking: BookingCreate):
+def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
 
-    client_exists = any(c["id"] == booking.client_id for c in clients)
-    room_exists = any(r["id"] == booking.room_id for r in rooms)
-
-
-    if not client_exists:
+    client = db.query(Client).filter(Client.id == booking.client_id).first()
+    if client is None:
         raise HTTPException(status_code=404, detail="Client not found")
     
-    if not room_exists:
+    room = db.query(Room).filter(Room.id == booking.room_id).first()
+    if room is None:
         raise HTTPException(status_code=404, detail="Room not found")
     
-
     if booking.start_time >= booking.end_time:
         raise HTTPException(status_code=400, detail="Invalid time range")
     
-    for b in bookings:
-        same_room = b["room_id"] == booking.room_id
-
+    existing_bookings = db.query(Booking).filter(Booking.room_id == booking.room_id).all()
+    for existing in existing_bookings:
         overlap = not (
-            booking.end_time <= b["start_time"] or
-            booking.start_time >= b["end_time"]
+            booking.end_time <= existing.start_time or
+            booking.start_time >= existing.end_time
         )
 
-        if same_room and overlap:
-            raise HTTPException(
-                status_code=400,
-                detail="Room already booked for this time"
-            )
+        if overlap:
+            raise HTTPException(status_code=400, detail="Room already booked for this time")
 
 
-    new_booking = {
-        "id": len(bookings)+1,
-        "client_id": booking.client_id,
-        "room_id": booking.room_id,
-        "start_time": booking.start_time,
-        "end_time": booking.end_time,
-        "status": booking.status.value
-    }
-    bookings.append(new_booking)
-    return{
-        "message": "Booking created successfully",
-        "booking": new_booking
-    }
+    new_booking = Booking(client_id=booking.client_id, room_id=booking.room_id, start_time=booking.start_time, end_time=booking.end_time, status=booking.status.value)
+    db.add(new_booking)
+    db.commit()
+    db.refresh(new_booking)
+    return new_booking
 
-# TODO: Split schemas.py out of main.py
-# TODO: Implement databases
+# Integrate response schemas
+# catch uniqueness/error handling
+# Split routes into seperate files
+# Add realtionships layer using SQLAlchemy

@@ -1,27 +1,94 @@
 # Studio Booking API
 
-A backend API built with FastAPI to manage:
-
-- Clients
-- Rooms
-- Bookings
+A backend API built with FastAPI and PostgreSQL to manage studio clients, rooms, and bookings.
 
 ## Features
+
 - Create and list clients
 - Create and list rooms
-- Create bookings with validation
-- Prevent double booking
+- Create and list bookings
 - Validate booking status
+- Prevent overlapping bookings for the same room
+- Validate client and room existence before creating a booking
 
 ## Tech Stack
+
 - Python
 - FastAPI
+- PostgreSQL
+- SQLAlchemy
 - Pydantic
 
-## Run the project
+## Project Structure
+
+```text
+app/
+  main.py
+  database.py
+  models.py
+  schemas.py
+```
+
+## Setup
+
+1. Create and activate a virtual environment
 
 ```bash
 python -m venv venv
 venv\Scripts\activate
+```
+
+2. Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
+
+3. Create the PostgreSQL database
+
+```sql
+CREATE DATABASE studio_management;
+```
+
+4. Create a `.env` file in the project root
+
+```env
+DATABASE_URL=postgresql+psycopg2://postgres:YOUR_PASSWORD@localhost:5432/studio_management
+```
+
+## Run the Project
+
+```bash
 python -m uvicorn app.main:app --reload
+```
+
+## API Documentation
+
+Once the server is running, open:
+
+- http://127.0.0.1:8000/docs
+
+## Endpoints
+
+- `GET /`
+- `GET /clients`
+- `POST /clients`
+- `GET /rooms`
+- `POST /rooms`
+- `GET /bookings`
+- `POST /bookings`
+
+## Notes
+
+- Tables are currently created automatically on startup with SQLAlchemy.
+- Environment variables are loaded from the `.env` file.
+- This project is still being refactored and improved as part of my backend learning journey.
+
+## Future Improvements
+
+- Add response schemas
+- Handle database integrity errors cleanly
+- Split routes into separate files
+- Add SQLAlchemy relationships
+- Add tests
+- Add Alembic migrations
