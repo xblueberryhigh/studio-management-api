@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.database import Base, engine, get_db
 from app import models
@@ -7,7 +8,6 @@ from app.models import Client, Room, Booking
 from app.schemas import ClientCreate, RoomCreate, BookingCreate, ClientResponse, RoomResponse, BookingResponse
 
 app = FastAPI()
-
 Base.metadata.create_all(bind=engine)
 
 @app.get("/")
@@ -34,11 +34,17 @@ def get_rooms(db: Session = Depends(get_db)):
 
 @app.post("/rooms", response_model=list[RoomResponse])
 def create_room(room: RoomCreate, db: Session = Depends(get_db)):
+
     new_room= Room(name=room.name)
     db.add(new_room)
-    db.commit()
-    db.refresh(new_room)
-    return new_room
+
+    try: 
+        db.commit()
+        db.refresh(new_room)
+        return new_room
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Room name already exists")
 
 #Bookings
 @app.get("/bookings", response_model=list[BookingResponse])
@@ -76,7 +82,7 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
     db.refresh(new_booking)
     return new_booking
 
-# catch uniqueness/error handling
+
 # Split routes into seperate files
 # Add realtionships layer using SQLAlchemy
 # Refactor into OOP logic
