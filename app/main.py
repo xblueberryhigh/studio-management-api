@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import Base, engine, get_db
 from app import models
 from app.models import Client, Room, Booking
-from app.schemas import ClientCreate, RoomCreate, BookingCreate
+from app.schemas import ClientCreate, RoomCreate, BookingCreate, ClientResponse, RoomResponse, BookingResponse
 
 app = FastAPI()
 
@@ -15,11 +15,11 @@ def root():
     return {"message": "Studio Booking API running"}
 
 #Clients
-@app.get("/clients")
+@app.get("/clients", response_model=list[ClientResponse])
 def get_clients(db: Session = Depends(get_db)):
     return db.query(Client).all()
 
-@app.post("/clients")
+@app.post("/clients", response_model=list[ClientResponse])
 def create_client(client: ClientCreate, db: Session = Depends(get_db)):
     new_client= Client(name=client.name)
     db.add(new_client)
@@ -28,11 +28,11 @@ def create_client(client: ClientCreate, db: Session = Depends(get_db)):
     return new_client
 
 #Rooms
-@app.get("/rooms")
+@app.get("/rooms", response_model=list[RoomResponse])
 def get_rooms(db: Session = Depends(get_db)):
     return db.query(Room).all()
 
-@app.post("/rooms")
+@app.post("/rooms", response_model=list[RoomResponse])
 def create_room(room: RoomCreate, db: Session = Depends(get_db)):
     new_room= Room(name=room.name)
     db.add(new_room)
@@ -41,11 +41,11 @@ def create_room(room: RoomCreate, db: Session = Depends(get_db)):
     return new_room
 
 #Bookings
-@app.get("/bookings")
+@app.get("/bookings", response_model=list[BookingResponse])
 def get_bookings(db: Session = Depends(get_db)):
     return db.query(Booking).all()
 
-@app.post("/bookings")
+@app.post("/bookings", response_model=list[BookingResponse])
 def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
 
     client = db.query(Client).filter(Client.id == booking.client_id).first()
@@ -76,7 +76,7 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
     db.refresh(new_booking)
     return new_booking
 
-# Integrate response schemas
 # catch uniqueness/error handling
 # Split routes into seperate files
 # Add realtionships layer using SQLAlchemy
+# Refactor into OOP logic

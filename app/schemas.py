@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 
 
 class ClientCreate(BaseModel):
@@ -19,6 +20,25 @@ class BookingStatus(str, Enum):
 
 
 class BookingCreate(BaseModel):
+    client_id: int
+    room_id: int
+    start_time: datetime
+    end_time: datetime
+    status: BookingStatus
+
+class ClientResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+class RoomResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+class BookingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
     client_id: int
     room_id: int
     start_time: datetime
