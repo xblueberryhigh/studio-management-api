@@ -39,8 +39,8 @@ class RoomResponse(BaseModel):
 class BookingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    client_id: int
-    room_id: int
     start_time: datetime
     end_time: datetime
     status: BookingStatus
+    client: ClientResponse
+    room: RoomResponse

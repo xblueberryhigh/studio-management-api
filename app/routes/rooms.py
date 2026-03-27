@@ -8,7 +8,6 @@ from app.schemas import RoomCreate, RoomResponse
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 
-#Rooms
 @router.get("", response_model=list[RoomResponse])
 def get_rooms(db: Session = Depends(get_db)):
     return db.query(Room).all()

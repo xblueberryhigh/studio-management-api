@@ -86,9 +86,8 @@ Once the server is running, open:
 
 ## Future Improvements
 
-- Add response schemas
 - Handle database integrity errors cleanly
-- Split routes into separate files
-- Add SQLAlchemy relationships
 - Add tests
 - Add Alembic migrations
+- improve overlap check in booking_service (two request at the same time)
+- Add pydantic validation in schemas
