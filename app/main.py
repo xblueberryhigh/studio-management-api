@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-
 from app.database import Base, engine
 from app import models
 from app.routes.clients import router as clients_router
