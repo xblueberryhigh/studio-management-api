@@ -83,5 +83,90 @@ def test_get_created_bookings(client):
     assert data[2]["room"]["name"] == "Room B"
     assert data[2]["status"] == "confirmed"
 
+def test_forbid_booking_with_unknown_client(client):
 
-# Finish BOOKINGS test with edge cases and error handling
+    client.post("/clients", json={"name": "Alice"})
+    room_1 = client.post("/rooms", json={"name": "Room A"})
+
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": 999,
+            "room_id": room_1.json()["id"],
+            "start_time": "2026-04-02T10:00:00",
+            "end_time": "2026-04-02T12:00:00",
+            "status": "confirmed",
+        },
+    )
+    
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Client not found"
+
+
+
+def test_forbid_booking_with_unknown_room(client):
+    client_1 = client.post("/clients", json={"name": "Alice"})
+    client.post("/rooms", json={"name": "Room A"})
+
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": client_1.json()["id"],
+            "room_id": 999,
+            "start_time": "2026-04-02T10:00:00",
+            "end_time": "2026-04-02T12:00:00",
+            "status": "confirmed",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Room not found"
+
+def test_forbid_booking_with_invalid_time_range(client):
+    client_create_response = client.post("/clients", json={"name": "Alice"})
+    room_create_response = client.post("/rooms", json={"name": "Room A"})
+
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": client_create_response.json()["id"],
+            "room_id": room_create_response.json()["id"],
+            "start_time": "2026-04-02T12:00:00",
+            "end_time": "2026-04-02T10:00:00",
+            "status": "confirmed",
+        },
+    )  
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid time range"
+
+def test_forbid_overlapping_booking_for_same_room(client):
+    client_1 = client.post("/clients", json={"name": "Alice"})
+    client_2 = client.post("/clients", json={"name": "Bob"})
+    room_1 = client.post("/rooms", json={"name": "Room A"})
+
+    first_booking = client.post(
+        "/bookings",
+        json={
+            "client_id": client_1.json()["id"],
+            "room_id": room_1.json()["id"],
+            "start_time": "2026-04-02T10:00:00",
+            "end_time": "2026-04-02T12:00:00",
+            "status": "confirmed",
+        },
+    )
+
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": client_2.json()["id"],
+            "room_id": room_1.json()["id"],
+            "start_time": "2026-04-02T11:00:00",
+            "end_time": "2026-04-02T13:00:00",
+            "status": "confirmed",
+        },
+    )
+
+    assert first_booking.status_code == 200
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Room already booked for this time"
