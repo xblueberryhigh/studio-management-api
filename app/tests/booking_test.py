@@ -83,8 +83,8 @@ def test_get_created_bookings(client):
     assert data[2]["room"]["name"] == "Room B"
     assert data[2]["status"] == "confirmed"
 
-def test_forbid_booking_with_unknown_client(client):
 
+def test_forbid_booking_with_unknown_client(client):
     client.post("/clients", json={"name": "Alice"})
     room_1 = client.post("/rooms", json={"name": "Room A"})
 
@@ -101,7 +101,6 @@ def test_forbid_booking_with_unknown_client(client):
     
     assert response.status_code == 404
     assert response.json()["detail"] == "Client not found"
-
 
 
 def test_forbid_booking_with_unknown_room(client):
@@ -122,6 +121,7 @@ def test_forbid_booking_with_unknown_room(client):
     assert response.status_code == 404
     assert response.json()["detail"] == "Room not found"
 
+
 def test_forbid_booking_with_invalid_time_range(client):
     client_create_response = client.post("/clients", json={"name": "Alice"})
     room_create_response = client.post("/rooms", json={"name": "Room A"})
@@ -139,6 +139,7 @@ def test_forbid_booking_with_invalid_time_range(client):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid time range"
+
 
 def test_forbid_overlapping_booking_for_same_room(client):
     client_1 = client.post("/clients", json={"name": "Alice"})

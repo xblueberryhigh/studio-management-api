@@ -10,6 +10,7 @@ A backend API built with FastAPI and PostgreSQL to manage studio clients, rooms,
 - Validate booking status
 - Prevent overlapping bookings for the same room
 - Validate client and room existence before creating a booking
+- Alembic migrations
 
 ## Tech Stack
 
@@ -18,6 +19,7 @@ A backend API built with FastAPI and PostgreSQL to manage studio clients, rooms,
 - PostgreSQL
 - SQLAlchemy
 - Pydantic
+- Alembic
 
 ## Project Structure
 
@@ -56,6 +58,12 @@ CREATE DATABASE studio_management;
 DATABASE_URL=postgresql+psycopg2://postgres:YOUR_PASSWORD@localhost:5432/studio_management
 ```
 
+5. Apply database migrations
+
+```bash
+alembic upgrade head
+```
+
 ## Run the Project
 
 ```bash
@@ -80,14 +88,13 @@ Once the server is running, open:
 
 ## Notes
 
-- Tables are currently created automatically on startup with SQLAlchemy.
+- Database tables are managed through Alembic migrations.
 - Environment variables are loaded from the `.env` file.
 - This project is still being refactored and improved as part of my backend learning journey.
 
 ## Future Improvements
 
 - Handle database integrity errors cleanly
-- Add tests
-- Add Alembic migrations
+- Run tests automatically in CI
 - improve overlap check in booking_service (two request at the same time)
 - Add pydantic validation in schemas
