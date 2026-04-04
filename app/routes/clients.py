@@ -2,17 +2,18 @@ from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Client
+from app.models import Client, User
 from app.schemas import ClientCreate, ClientResponse
+from app.security import get_current_user
 
 router=APIRouter(prefix="/clients", tags=["clients"])
 
 @router.get("", response_model=list[ClientResponse])
-def get_clients(db: Session = Depends(get_db)):
+def get_clients(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Client).all()
 
 @router.post("", response_model=ClientResponse)
-def create_client(client: ClientCreate, db: Session = Depends(get_db)):
+def create_client(client: ClientCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_client= Client(name=client.name)
     db.add(new_client)
     db.commit()

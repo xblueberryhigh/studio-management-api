@@ -1,6 +1,27 @@
-def test_create_booking(client):
-    client_create_response = client.post("/clients", json={"name": "Alice"})
-    room_create_response = client.post("/rooms", json={"name": "Room A"})
+from app.tests.conftest import auth_headers, register_user
+
+
+def test_create_booking_without_token_returns_401(client):
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": 1,
+            "room_id": 1,
+            "start_time": "2026-04-02T10:00:00",
+            "end_time": "2026-04-02T12:00:00",
+            "status": "confirmed",
+        },
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_booking(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_create_response = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    room_create_response = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
 
     booking_create_response = client.post(
         "/bookings",
@@ -11,6 +32,7 @@ def test_create_booking(client):
             "end_time": "2026-04-02T12:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
 
     assert booking_create_response.status_code == 200
@@ -23,13 +45,22 @@ def test_create_booking(client):
     assert data["status"] == "confirmed"
 
 
-def test_get_created_bookings(client):
-    client_1 = client.post("/clients", json={"name": "Alice"})
-    client_2 = client.post("/clients", json={"name": "Bob"})
-    client_3 = client.post("/clients", json={"name": "Charlie"})
+def test_get_bookings_without_token_returns_401(client):
+    response = client.get("/bookings")
 
-    room_1 = client.post("/rooms", json={"name": "Room A"})
-    room_2 = client.post("/rooms", json={"name": "Room B"})
+    assert response.status_code == 401
+
+
+def test_get_created_bookings(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_1 = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    client_2 = client.post("/clients", json={"name": "Bob"}, headers=headers)
+    client_3 = client.post("/clients", json={"name": "Charlie"}, headers=headers)
+
+    room_1 = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
+    room_2 = client.post("/rooms", json={"name": "Room B"}, headers=admin_headers)
 
     client.post(
         "/bookings",
@@ -40,6 +71,7 @@ def test_get_created_bookings(client):
             "end_time": "2026-04-02T12:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
 
     client.post(
@@ -51,6 +83,7 @@ def test_get_created_bookings(client):
             "end_time": "2026-04-02T14:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
 
     client.post(
@@ -62,9 +95,10 @@ def test_get_created_bookings(client):
             "end_time": "2026-04-02T12:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
 
-    response = client.get("/bookings")
+    response = client.get("/bookings", headers=headers)
 
     assert response.status_code == 200
 
@@ -84,9 +118,12 @@ def test_get_created_bookings(client):
     assert data[2]["status"] == "confirmed"
 
 
-def test_forbid_booking_with_unknown_client(client):
-    client.post("/clients", json={"name": "Alice"})
-    room_1 = client.post("/rooms", json={"name": "Room A"})
+def test_forbid_booking_with_unknown_client(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client.post("/clients", json={"name": "Alice"}, headers=headers)
+    room_1 = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
 
     response = client.post(
         "/bookings",
@@ -97,15 +134,19 @@ def test_forbid_booking_with_unknown_client(client):
             "end_time": "2026-04-02T12:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
     
     assert response.status_code == 404
     assert response.json()["detail"] == "Client not found"
 
 
-def test_forbid_booking_with_unknown_room(client):
-    client_1 = client.post("/clients", json={"name": "Alice"})
-    client.post("/rooms", json={"name": "Room A"})
+def test_forbid_booking_with_unknown_room(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_1 = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
 
     response = client.post(
         "/bookings",
@@ -116,15 +157,19 @@ def test_forbid_booking_with_unknown_room(client):
             "end_time": "2026-04-02T12:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Room not found"
 
 
-def test_forbid_booking_with_invalid_time_range(client):
-    client_create_response = client.post("/clients", json={"name": "Alice"})
-    room_create_response = client.post("/rooms", json={"name": "Room A"})
+def test_forbid_booking_with_invalid_time_range(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_create_response = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    room_create_response = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
 
     response = client.post(
         "/bookings",
@@ -135,16 +180,20 @@ def test_forbid_booking_with_invalid_time_range(client):
             "end_time": "2026-04-02T10:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )  
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid time range"
 
 
-def test_forbid_overlapping_booking_for_same_room(client):
-    client_1 = client.post("/clients", json={"name": "Alice"})
-    client_2 = client.post("/clients", json={"name": "Bob"})
-    room_1 = client.post("/rooms", json={"name": "Room A"})
+def test_forbid_overlapping_booking_for_same_room(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_1 = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    client_2 = client.post("/clients", json={"name": "Bob"}, headers=headers)
+    room_1 = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
 
     first_booking = client.post(
         "/bookings",
@@ -155,6 +204,7 @@ def test_forbid_overlapping_booking_for_same_room(client):
             "end_time": "2026-04-02T12:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
 
     response = client.post(
@@ -166,6 +216,7 @@ def test_forbid_overlapping_booking_for_same_room(client):
             "end_time": "2026-04-02T13:00:00",
             "status": "confirmed",
         },
+        headers=headers,
     )
 
     assert first_booking.status_code == 200

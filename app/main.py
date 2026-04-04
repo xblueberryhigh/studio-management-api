@@ -20,5 +20,4 @@ def root():
 # Add simple field validation for ClientCreate and RoomCreate
 # Add pydantic validation in schemas (more precise data parsing)
 # Improve booking conflic handling at the DB/Transaction level
-# Simple authentication and authorization maybe
 
