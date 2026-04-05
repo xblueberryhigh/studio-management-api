@@ -20,6 +20,26 @@ def test_create_client(client):
     assert data["name"] == "Alice"
 
 
+def test_create_client_rejects_blank_name(client):
+    register_user(client)
+    headers = auth_headers(client)
+
+    response = client.post("/clients", json={"name": "   "}, headers=headers)
+
+    assert response.status_code == 422
+    assert "Name cannot be blank" in str(response.json()["detail"])
+
+
+def test_create_client_trims_name(client):
+    register_user(client)
+    headers = auth_headers(client)
+
+    response = client.post("/clients", json={"name": "  Alice  "}, headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Alice"
+
+
 def test_get_clients_without_token_returns_401(client):
     response = client.get("/clients")
 

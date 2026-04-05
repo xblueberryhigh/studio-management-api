@@ -183,8 +183,79 @@ def test_forbid_booking_with_invalid_time_range(client, admin_headers):
         headers=headers,
     )  
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Invalid time range"
+    assert response.status_code == 422
+    assert "end_time must be after start_time" in str(response.json()["detail"])
+
+
+def test_forbid_booking_with_equal_start_and_end_time(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_create_response = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    room_create_response = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
+
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": client_create_response.json()["id"],
+            "room_id": room_create_response.json()["id"],
+            "start_time": "2026-04-02T10:00:00",
+            "end_time": "2026-04-02T10:00:00",
+            "status": "confirmed",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert "end_time must be after start_time" in str(response.json()["detail"])
+
+
+def test_forbid_booking_with_invalid_status(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_create_response = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    room_create_response = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
+
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": client_create_response.json()["id"],
+            "room_id": room_create_response.json()["id"],
+            "start_time": "2026-04-02T10:00:00",
+            "end_time": "2026-04-02T12:00:00",
+            "status": "rescheduled",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert "confirmed" in str(response.json()["detail"])
+    assert "cancelled" in str(response.json()["detail"])
+    assert "pending" in str(response.json()["detail"])
+
+
+def test_create_booking_with_pending_status(client, admin_headers):
+    register_user(client)
+    headers = auth_headers(client)
+
+    client_create_response = client.post("/clients", json={"name": "Alice"}, headers=headers)
+    room_create_response = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
+
+    response = client.post(
+        "/bookings",
+        json={
+            "client_id": client_create_response.json()["id"],
+            "room_id": room_create_response.json()["id"],
+            "start_time": "2026-04-02T10:00:00",
+            "end_time": "2026-04-02T12:00:00",
+            "status": "pending",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "pending"
 
 
 def test_forbid_overlapping_booking_for_same_room(client, admin_headers):

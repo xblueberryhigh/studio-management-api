@@ -18,6 +18,30 @@ def test_forbid_duplicate_room_name(client, admin_headers):
     assert second_response.status_code == 400
     assert second_response.json()["detail"] == "Room name already exists"
 
+
+def test_create_room_rejects_blank_name(client, admin_headers):
+    response = client.post("/rooms", json={"name": "   "}, headers=admin_headers)
+
+    assert response.status_code == 422
+    assert "Name cannot be blank" in str(response.json()["detail"])
+
+
+def test_create_room_trims_name(client, admin_headers):
+    response = client.post("/rooms", json={"name": "  Room A  "}, headers=admin_headers)
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Room A"
+
+
+def test_forbid_duplicate_room_name_after_trimming(client, admin_headers):
+    first_response = client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
+    second_response = client.post("/rooms", json={"name": "  Room A  "}, headers=admin_headers)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 400
+    assert second_response.json()["detail"] == "Room name already exists"
+
+
 def test_get_created_rooms(client, admin_headers):
     client.post("/rooms", json={"name": "Room A"}, headers=admin_headers)
     client.post("/rooms", json={"name": "Room B"}, headers=admin_headers)

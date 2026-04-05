@@ -46,6 +46,84 @@ def test_register_duplicate_email(client):
     assert second_register.json()["detail"] == "Email already exists"
 
 
+def test_register_rejects_blank_first_name(client):
+    response = client.post(
+        "/auth/register",
+        json={
+            "first_name": "   ",
+            "last_name": "Sandler",
+            "email": "alicesandler@gmail.com",
+            "password": "12345",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Cannot be blank" in str(response.json()["detail"])
+
+
+def test_register_rejects_blank_last_name(client):
+    response = client.post(
+        "/auth/register",
+        json={
+            "first_name": "Alice",
+            "last_name": "   ",
+            "email": "alicesandler@gmail.com",
+            "password": "12345",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Cannot be blank" in str(response.json()["detail"])
+
+
+def test_register_rejects_blank_email(client):
+    response = client.post(
+        "/auth/register",
+        json={
+            "first_name": "Alice",
+            "last_name": "Sandler",
+            "email": "   ",
+            "password": "12345",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Cannot be blank" in str(response.json()["detail"])
+
+
+def test_register_rejects_short_password(client):
+    response = client.post(
+        "/auth/register",
+        json={
+            "first_name": "Alice",
+            "last_name": "Sandler",
+            "email": "alicesandler@gmail.com",
+            "password": "1234",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "at least 5 characters" in str(response.json()["detail"])
+
+
+def test_register_trims_names_and_email(client):
+    response = client.post(
+        "/auth/register",
+        json={
+            "first_name": "  Alice  ",
+            "last_name": "  Sandler  ",
+            "email": "  alicesandler@gmail.com  ",
+            "password": "12345",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["first_name"] == "Alice"
+    assert data["last_name"] == "Sandler"
+    assert data["email"] == "alicesandler@gmail.com"
+
+
 def test_login_success(client):
     client.post(
         "/auth/register",
@@ -70,6 +148,55 @@ def test_login_success(client):
     assert "access_token" in data
     assert isinstance(data["access_token"], str)
     assert data["token_type"] == "bearer"
+
+
+def test_login_rejects_blank_email(client):
+    response = client.post(
+        "/auth/login",
+        json={
+            "email": "   ",
+            "password": "12345",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Email cannot be blank" in str(response.json()["detail"])
+
+
+def test_login_rejects_blank_password(client):
+    response = client.post(
+        "/auth/login",
+        json={
+            "email": "alicesandler@gmail.com",
+            "password": "",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "at least 1 character" in str(response.json()["detail"])
+
+
+def test_login_accepts_email_with_surrounding_spaces(client):
+    client.post(
+        "/auth/register",
+        json={
+            "first_name": "Alice",
+            "last_name": "Sandler",
+            "email": "alicesandler@gmail.com",
+            "password": "12345",
+        },
+    )
+
+    response = client.post(
+        "/auth/login",
+        json={
+            "email": "  alicesandler@gmail.com  ",
+            "password": "12345",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["token_type"] == "bearer"
 
 
 

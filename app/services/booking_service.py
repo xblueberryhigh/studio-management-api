@@ -7,7 +7,6 @@ from datetime import datetime
 def create_booking(db: Session, booking: BookingCreate) -> Booking:
     get_client_or_404(db, booking.client_id)
     get_room_or_404(db, booking.room_id)
-    validate_booking_time_range(booking.start_time, booking.end_time)
     ensure_room_is_available(
         db,
         booking.room_id,
@@ -41,11 +40,6 @@ def get_room_or_404(db: Session, room_id: int) -> Room:
     if room is None:
         raise HTTPException(status_code=404, detail="Room not found")
     return room
-
-
-def validate_booking_time_range(start_time: datetime, end_time: datetime) -> None:
-    if start_time >= end_time:
-        raise HTTPException(status_code=400, detail="Invalid time range")
 
 
 def ensure_room_is_available(db: Session, room_id: int, start_time: datetime, end_time: datetime) -> None:

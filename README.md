@@ -10,11 +10,14 @@ A backend API built with FastAPI and PostgreSQL to manage studio clients, rooms,
 - Create and list clients
 - Create and list rooms
 - Create and list bookings
-- Validate booking status
+- Request validation with Pydantic schemas
+- Trim and reject blank values for user, client, and room input fields
+- Validate booking status with enums
+- Validate booking time ranges before service logic runs
 - Prevent overlapping bookings for the same room
 - Validate client and room existence before creating a booking
 - Alembic migrations
-- Pytest test suite for auth, clients, rooms, and bookings
+- Pytest test suite covering auth, clients, rooms, bookings, and validation behavior
 
 ## Tech Stack
 
@@ -103,6 +106,7 @@ Once the server is running, open:
 - Environment variables are loaded from `.env` and `.env.test`.
 - `GET /clients`, `POST /clients`, `GET /rooms`, `GET /bookings`, and `POST /bookings` require authentication.
 - `POST /rooms` requires an authenticated admin user.
+- Request-body validation errors are returned as `422 Unprocessable Entity`.
 - This project is still being refactored and improved as part of my backend learning journey.
 
 ## Testing
@@ -113,9 +117,17 @@ Run the test suite with:
 pytest -q
 ```
 
+The test suite currently covers:
+
+- successful and failing auth flows
+- schema validation for blank and malformed input
+- role-based room creation rules
+- booking conflict and booking time validation
+- authenticated access to protected routes
+
 ## Future Improvements
 
 - Handle database integrity errors cleanly
 - Run tests automatically in CI
 - Improve overlap check in booking_service (two request at the same time)
-- Add pydantic validation in schemas
+- Add stronger password policy rules during registration
