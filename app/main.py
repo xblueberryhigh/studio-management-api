@@ -17,7 +17,5 @@ def root():
 
 #TODO:
 # Overlap check in booking_service (two request at the same time)
-# Add simple field validation for ClientCreate and RoomCreate
-# Add pydantic validation in schemas (more precise data parsing)
 # Improve booking conflic handling at the DB/Transaction level
 

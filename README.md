@@ -4,8 +4,9 @@ A backend API built with FastAPI and PostgreSQL to manage studio clients, rooms,
 
 ## Features
 
-- User registration and login with JWT tokens
-- Protected routes with bearer-token authentication
+- User registration and login with JWT bearer tokens
+- Password hashing with bcrypt
+- Protected routes with OAuth2 bearer-token authentication
 - Admin-only room creation
 - Create and list clients
 - Create and list rooms
@@ -18,6 +19,7 @@ A backend API built with FastAPI and PostgreSQL to manage studio clients, rooms,
 - Validate client and room existence before creating a booking
 - Alembic migrations
 - Pytest test suite covering auth, clients, rooms, bookings, and validation behavior
+- GitHub Actions CI that runs tests on push and pull request
 
 ## Tech Stack
 
@@ -40,6 +42,9 @@ app/
   routes/
   services/
   tests/
+.github/
+  workflows/
+alembic/
 ```
 
 ## Setup
@@ -104,9 +109,11 @@ Once the server is running, open:
 
 - Database tables are managed through Alembic migrations.
 - Environment variables are loaded from `.env` and `.env.test`.
+- Access tokens are signed with `HS256` and currently expire after 20 minutes.
 - `GET /clients`, `POST /clients`, `GET /rooms`, `GET /bookings`, and `POST /bookings` require authentication.
 - `POST /rooms` requires an authenticated admin user.
 - Request-body validation errors are returned as `422 Unprocessable Entity`.
+- App-level business-rule errors such as duplicate emails, duplicate room names, booking overlaps, and missing related records return HTTP errors like `400`, `401`, `403`, or `404`.
 - This project is still being refactored and improved as part of my backend learning journey.
 
 ## Testing
@@ -125,9 +132,13 @@ The test suite currently covers:
 - booking conflict and booking time validation
 - authenticated access to protected routes
 
+## CI
+
+GitHub Actions runs the test suite automatically on every push and pull request.
+The workflow file is `.github/workflows/tests.yml` and starts a PostgreSQL 15 service for the test run.
+
 ## Future Improvements
 
-- Handle database integrity errors cleanly
-- Run tests automatically in CI
 - Improve overlap check in booking_service (two request at the same time)
+- Improve booking conflict handling at the database/transaction level
 - Add stronger password policy rules during registration
