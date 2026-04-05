@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
-
 from app.models import Booking, Client, Room
 from app.schemas import BookingCreate
 from datetime import datetime

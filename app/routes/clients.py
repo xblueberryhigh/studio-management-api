@@ -1,6 +1,5 @@
 from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
-
 from app.database import get_db
 from app.models import Client, User
 from app.schemas import ClientCreate, ClientResponse
